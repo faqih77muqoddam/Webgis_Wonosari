@@ -381,19 +381,34 @@ html, body {
 </div>
 
 <script>
-var map = L.map('map').setView([-7.78,110.46],14);
+var map = L.map('map');
 
-var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'OpenStreetMap' }).addTo(map);
-var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
-var light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png');
+var osm = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { attribution:'OpenStreetMap' }
+).addTo(map);
+
+var satellite = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+);
+
+var light = L.tileLayer(
+  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+);
 
 var currentBasemap = osm;
 
 function setBasemap(type){
   map.removeLayer(currentBasemap);
-  if(type === 'satellite') currentBasemap = satellite;
-  else if(type === 'light') currentBasemap = light;
-  else currentBasemap = osm;
+
+  if(type === 'satellite'){
+    currentBasemap = satellite;
+  } else if(type === 'light'){
+    currentBasemap = light;
+  } else {
+    currentBasemap = osm;
+  }
+
   currentBasemap.addTo(map);
 }
 
@@ -403,110 +418,191 @@ var sungaiLayer = L.layerGroup().addTo(map);
 var batasLayer = L.layerGroup().addTo(map);
 
 function makePopup(title, props){
+
   if(title !== "Area Dukuh Wonosari"){
     return `
       <div class="simple-popup">
         <h3 class="popup-title">${title}</h3>
         <b>Jenis Data:</b> ${title}<br>
-        <b>Kawasan:</b> Dukuh Wonosari<br>
-        <b>Sumber:</b> Data spasial Wonosari
+        <b>Kawasan:</b> Wonosari
       </div>
     `;
   }
 
   let orderedKeys = [
-    "id","Nama_Pmlk","KTP_Pmlk","Tglhr_Pmlk","UmrKK_Pmlk",
-    "Luas_Tnh","Bukti_Pmlk","Jns_Pmnf","Ind_Trlntr","Sts_Konfl","Text_Pngg"
+    "id","Nama_Pmlk","KTP_Pmlk","Tglhr_Pmlk",
+    "UmrKK_Pmlk","Luas_Tnh","Bukti_Pmlk",
+    "Jns_Pmnf","Ind_Trlntr","Sts_Konfl","Text_Pngg"
   ];
 
   let labelMap = {
-    id: "ID",
-    Nama_Pmlk: "Nama Pemilik",
-    KTP_Pmlk: "KTP Pemilik",
-    Tglhr_Pmlk: "Tanggal Lahir",
-    UmrKK_Pmlk: "Umur KK",
-    Luas_Tnh: "Luas Tanah",
-    Bukti_Pmlk: "Bukti Kepemilikan",
-    Jns_Pmnf: "Jenis Pemanfaatan",
-    Ind_Trlntr: "Indikasi Terlantar",
-    Sts_Konfl: "Status Konflik",
-    Text_Pngg: "Penggunaan"
+    id:"ID",
+    Nama_Pmlk:"Nama Pemilik",
+    KTP_Pmlk:"KTP",
+    Tglhr_Pmlk:"Tanggal Lahir",
+    UmrKK_Pmlk:"Umur",
+    Luas_Tnh:"Luas Tanah",
+    Bukti_Pmlk:"Bukti",
+    Jns_Pmnf:"Pemanfaatan",
+    Ind_Trlntr:"Terlantar",
+    Sts_Konfl:"Status",
+    Text_Pngg:"Penggunaan"
   };
 
-  let html = `<h3 class="popup-title">${title}</h3><table class="popup-table">`;
+  let html = `
+    <h3 class="popup-title">${title}</h3>
+    <table class="popup-table">
+  `;
 
   orderedKeys.forEach(function(key){
-    if(props[key] !== undefined && props[key] !== null && props[key] !== ""){
-      html += `<tr><td>${labelMap[key]}</td><td>${props[key]}</td></tr>`;
+
+    if(
+      props[key] !== undefined &&
+      props[key] !== null &&
+      props[key] !== ""
+    ){
+
+      html += `
+        <tr>
+          <td>${labelMap[key]}</td>
+          <td>${props[key]}</td>
+        </tr>
+      `;
     }
   });
 
   html += `</table>`;
+
   return html;
 }
 
-function addLayer(fileName, title, style, targetLayer, fit=false){
+function addLayer(fileName, title, style, targetLayer){
+
   fetch("data/" + fileName)
-    .then(res => res.json())
+
+    .then(res => {
+
+      if(!res.ok){
+        throw new Error("File tidak ditemukan: " + fileName);
+      }
+
+      return res.json();
+    })
+
     .then(data => {
+
       var layer = L.geoJSON(data,{
-        style:style,
+
+        style: style,
+
         onEachFeature:function(feature, lyr){
+
           lyr.on("mouseover", function(){
-            lyr.setStyle({ weight:(style.weight || 1) + 0.8 });
+
+            lyr.setStyle({
+              weight:(style.weight || 1) + 0.7
+            });
+
           });
 
           lyr.on("mouseout", function(){
             lyr.setStyle(style);
           });
 
-          lyr.bindPopup(makePopup(title, feature.properties), {
-            maxWidth: 520
-          });
+          lyr.bindPopup(
+            makePopup(title, feature.properties),
+            { maxWidth:520 }
+          );
         }
       });
 
       layer.addTo(targetLayer);
 
-      if(fit && layer.getBounds().isValid()){
-        map.fitBounds(layer.getBounds(),{ padding:[40,40] });
+      if(title === "Area Dukuh Wonosari"){
+
+        setTimeout(() => {
+
+          if(layer.getBounds().isValid()){
+
+            map.fitBounds(
+              layer.getBounds(),
+              { padding:[40,40] }
+            );
+
+          }
+
+        },500);
       }
+
     })
-    .catch(err => console.log("Gagal load:", fileName, err));
+
+    .catch(err => {
+      console.log(err);
+    });
 }
 
-addLayer("geo_dk_wonosari.geojson","Area Dukuh Wonosari",{
-  color:"#3D74B6",
-  weight:1.15,
-  fillColor:"#FBF5DE",
-  fillOpacity:0.26
-},geoLayer,true);
+addLayer(
+  "Geo_DK_Wonosari.geojson",
+  "Area Dukuh Wonosari",
+  {
+    color:"#3D74B6",
+    weight:1.2,
+    fillColor:"#FBF5DE",
+    fillOpacity:0.28
+  },
+  geoLayer
+);
 
-addLayer("jalandukuh.geojson","Jalan Dukuh",{
-  color:"#E89B29",
-  weight:2.4,
-  opacity:0.9
-},jalanLayer);
+addLayer(
+  "Jalandukuh.geojson",
+  "Jalan Dukuh",
+  {
+    color:"#E89B29",
+    weight:2.5,
+    opacity:0.9
+  },
+  jalanLayer
+);
 
-addLayer("sungaidukuh.geojson","Saluran / Irigasi",{
-  color:"#4FA3A5",
-  weight:2.1,
-  opacity:0.75
-},sungaiLayer);
+addLayer(
+  "Sungaidukuh.geojson",
+  "Saluran / Irigasi",
+  {
+    color:"#4FA3A5",
+    weight:2,
+    opacity:0.8
+  },
+  sungaiLayer
+);
 
-addLayer("batasdukuh.geojson","Batas Wilayah",{
-  color:"#7D5BA6",
-  weight:2,
-  dashArray:"7,7",
-  fillOpacity:0
-},batasLayer);
+addLayer(
+  "Batasdukuh.geojson",
+  "Batas Wilayah",
+  {
+    color:"#7D5BA6",
+    weight:2,
+    dashArray:"7,7",
+    fillOpacity:0
+  },
+  batasLayer
+);
 
 function toggleLayer(layer, status){
-  if(status) map.addLayer(layer);
-  else map.removeLayer(layer);
+
+  if(status){
+    map.addLayer(layer);
+  } else {
+    map.removeLayer(layer);
+  }
 }
 
-function updateCheckboxes(statusGeo, statusJalan, statusSungai, statusBatas){
+function updateCheckboxes(
+  statusGeo,
+  statusJalan,
+  statusSungai,
+  statusBatas
+){
+
   document.getElementById("cbGeo").checked = statusGeo;
   document.getElementById("cbJalan").checked = statusJalan;
   document.getElementById("cbSungai").checked = statusSungai;
@@ -519,6 +615,7 @@ function updateCheckboxes(statusGeo, statusJalan, statusSungai, statusBatas){
 }
 
 function setPreset(mode){
+
   if(mode === "administrasi"){
     updateCheckboxes(true,false,false,true);
   }
@@ -532,7 +629,10 @@ function setPreset(mode){
   }
 }
 
-L.control.scale({ metric:true, imperial:false }).addTo(map);
+L.control.scale({
+  metric:true,
+  imperial:false
+}).addTo(map);
 </script>
 
 </body>
