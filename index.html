@@ -1,399 +1,31 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebGIS Wonosari</title>
+var map = L.map('map');
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+var osm = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { attribution:'OpenStreetMap' }
+).addTo(map);
 
-<style>
-:root{
-  --blue:#3D74B6;
-  --blue-dark:#244B7A;
-  --blue-soft:#D7E8FA;
-  --yellow:#FBF5DE;
-  --gold:#F2B705;
-  --orange:#E89B29;
-  --teal:#4FA3A5;
-  --purple:#7D5BA6;
-  --ink:#2f3542;
-}
+var satellite = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+);
 
-html, body {
-  margin: 0;
-  height: 100%;
-  font-family: "Poppins", sans-serif;
-}
-
-#map {
-  width: 100%;
-  height: 100vh;
-}
-
-.sidebar {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 1000;
-  width: 315px;
-  max-height: 86vh;
-  overflow-y: auto;
-  padding: 24px;
-  border-radius: 26px;
-  background: rgba(251,245,222,0.93);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 14px 36px rgba(36,75,122,.20);
-  border: 2px solid rgba(61,116,182,.20);
-}
-
-.badge {
-  display: inline-block;
-  padding: 7px 13px;
-  border-radius: 999px;
-  background: var(--blue);
-  color: white;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .5px;
-  margin-bottom: 14px;
-}
-
-.sidebar h1 {
-  margin: 0;
-  font-size: 25px;
-  line-height: 1.28;
-  color: var(--blue-dark);
-}
-
-.sidebar p {
-  margin-top: 12px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: #4b4b4b;
-}
-
-.section-title {
-  margin-top: 24px;
-  margin-bottom: 12px;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: .8px;
-  color: var(--blue);
-}
-
-.basemap-option {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 10px 0;
-  padding: 11px 12px;
-  border-radius: 15px;
-  background: rgba(255,255,255,.66);
-  border: 1px solid rgba(61,116,182,.18);
-  cursor: pointer;
-  color: #333;
-  font-size: 14px;
-}
-
-.basemap-option input {
-  accent-color: var(--blue);
-}
-
-.preset-box {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  margin: 12px 0 16px;
-}
-
-.preset-btn {
-  border: none;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: white;
-  color: var(--blue-dark);
-  font-weight: 700;
-  cursor: pointer;
-  text-align: left;
-  box-shadow: 0 4px 12px rgba(61,116,182,.10);
-  border-left: 5px solid var(--blue);
-}
-
-.preset-btn.alt {
-  border-left-color: var(--gold);
-}
-
-.preset-btn.light {
-  border-left-color: var(--teal);
-}
-
-.layer-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin: 13px 0;
-  font-size: 14px;
-  color: #333;
-}
-
-.layer-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.layer-icon {
-  width: 29px;
-  height: 29px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 13px;
-}
-
-.icon-geo { background:#EAF1D6; color:var(--blue); }
-.icon-jalan { background:#FFF0C2; color:var(--orange); }
-.icon-air { background:#DDF4F5; color:var(--teal); }
-.icon-batas { background:#EFE6FA; color:var(--purple); }
-
-.switch {
-  position: relative;
-  width: 46px;
-  height: 25px;
-}
-
-.switch input {
-  display: none;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  inset: 0;
-  background: #d7d7d7;
-  border-radius: 999px;
-  transition: .25s;
-}
-
-.slider:before {
-  content: "";
-  position: absolute;
-  height: 19px;
-  width: 19px;
-  left: 3px;
-  bottom: 3px;
-  background: white;
-  border-radius: 50%;
-  transition: .25s;
-  box-shadow: 0 2px 8px rgba(0,0,0,.2);
-}
-
-.switch input:checked + .slider {
-  background: var(--blue);
-}
-
-.switch input:checked + .slider:before {
-  transform: translateX(21px);
-}
-
-.legend {
-  position: absolute;
-  bottom: 26px;
-  right: 26px;
-  z-index: 1000;
-  width: 235px;
-  padding: 18px;
-  border-radius: 24px;
-  background: rgba(251,245,222,0.94);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 14px 35px rgba(36,75,122,.18);
-  border: 2px solid rgba(61,116,182,.20);
-}
-
-.legend h3 {
-  margin: 0 0 14px;
-  font-size: 17px;
-  color: var(--blue-dark);
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  margin: 10px 0;
-  font-size: 13px;
-  color: #333;
-}
-
-.symbol-poly {
-  width: 30px;
-  height: 15px;
-  border-radius: 5px;
-}
-
-.symbol-line {
-  width: 32px;
-  height: 0;
-}
-
-.leaflet-popup-content-wrapper {
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.22);
-}
-
-.popup-title {
-  margin: 0 0 12px;
-  color: var(--blue-dark);
-  font-size: 17px;
-  font-weight: 800;
-}
-
-.popup-table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 12px;
-}
-
-.popup-table td {
-  border: 1px solid #e5e5e5;
-  padding: 7px 9px;
-}
-
-.popup-table td:first-child {
-  background: var(--yellow);
-  color: var(--blue-dark);
-  font-weight: 700;
-}
-
-.simple-popup {
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-@media(max-width:900px){
-  .sidebar {
-    width: 260px;
-    padding: 18px;
-  }
-
-  .sidebar h1 {
-    font-size: 20px;
-  }
-
-  .legend {
-    width: 190px;
-  }
-}
-</style>
-</head>
-
-<body>
-
-<div class="sidebar">
-  <div class="badge">WEBGIS WONOSARI BY CIKA</div>
-
-  <h1>
-    Sistem Informasi<br>
-    Geospasial Wonosari
-  </h1>
-
-  <p>
-    Visualisasi data spasial wilayah Wonosari berbasis WebGIS interaktif menggunakan Leaflet dan GeoJSON.
-  </p>
-
-  <div class="section-title">BASEMAP</div>
-
-  <label class="basemap-option">
-    <input type="radio" name="basemap" checked onclick="setBasemap('osm')">
-    OpenStreetMap
-  </label>
-
-  <label class="basemap-option">
-    <input type="radio" name="basemap" onclick="setBasemap('satellite')">
-    Satellite
-  </label>
-
-  <label class="basemap-option">
-    <input type="radio" name="basemap" onclick="setBasemap('light')">
-    Carto Light
-  </label>
-
-  <div class="section-title">PRESET TAMPILAN</div>
-
-  <div class="preset-box">
-    <button class="preset-btn" onclick="setPreset('administrasi')">Administrasi Wilayah</button>
-    <button class="preset-btn alt" onclick="setPreset('akses')">Akses dan Batas</button>
-    <button class="preset-btn light" onclick="setPreset('hidrologi')">Hidrologi / Saluran</button>
-  </div>
-
-  <div class="section-title">LAYER DATA</div>
-
-  <div class="layer-item">
-    <div class="layer-label"><span class="layer-icon icon-geo">▧</span> Area Dukuh</div>
-    <label class="switch"><input id="cbGeo" type="checkbox" checked onchange="toggleLayer(geoLayer,this.checked)"><span class="slider"></span></label>
-  </div>
-
-  <div class="layer-item">
-    <div class="layer-label"><span class="layer-icon icon-jalan">═</span> Jalan Dukuh</div>
-    <label class="switch"><input id="cbJalan" type="checkbox" checked onchange="toggleLayer(jalanLayer,this.checked)"><span class="slider"></span></label>
-  </div>
-
-  <div class="layer-item">
-    <div class="layer-label"><span class="layer-icon icon-air">≈</span> Saluran / Irigasi</div>
-    <label class="switch"><input id="cbSungai" type="checkbox" checked onchange="toggleLayer(sungaiLayer,this.checked)"><span class="slider"></span></label>
-  </div>
-
-  <div class="layer-item">
-    <div class="layer-label"><span class="layer-icon icon-batas">--</span> Batas Wilayah</div>
-    <label class="switch"><input id="cbBatas" type="checkbox" checked onchange="toggleLayer(batasLayer,this.checked)"><span class="slider"></span></label>
-  </div>
-</div>
-
-<div id="map"></div>
-
-<div class="legend">
-  <h3>Legenda</h3>
-
-  <div class="legend-item">
-    <span class="symbol-poly" style="background:#FBF5DE;border:2px solid #3D74B6;"></span>
-    Area Dukuh
-  </div>
-
-  <div class="legend-item">
-    <span class="symbol-line" style="border-top:3px solid #E89B29;"></span>
-    Jalan
-  </div>
-
-  <div class="legend-item">
-    <span class="symbol-line" style="border-top:3px solid #4FA3A5;"></span>
-    Saluran / Irigasi
-  </div>
-
-  <div class="legend-item">
-    <span class="symbol-line" style="border-top:2px dashed #7D5BA6;"></span>
-    Batas Wilayah
-  </div>
-</div>
-
-<script>
-var map = L.map('map').setView([-7.78,110.46],14);
-
-var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'OpenStreetMap' }).addTo(map);
-var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
-var light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png');
+var light = L.tileLayer(
+  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+);
 
 var currentBasemap = osm;
 
 function setBasemap(type){
   map.removeLayer(currentBasemap);
-  if(type === 'satellite') currentBasemap = satellite;
-  else if(type === 'light') currentBasemap = light;
-  else currentBasemap = osm;
+
+  if(type === 'satellite'){
+    currentBasemap = satellite;
+  } else if(type === 'light'){
+    currentBasemap = light;
+  } else {
+    currentBasemap = osm;
+  }
+
   currentBasemap.addTo(map);
 }
 
@@ -403,110 +35,191 @@ var sungaiLayer = L.layerGroup().addTo(map);
 var batasLayer = L.layerGroup().addTo(map);
 
 function makePopup(title, props){
+
   if(title !== "Area Dukuh Wonosari"){
     return `
       <div class="simple-popup">
         <h3 class="popup-title">${title}</h3>
         <b>Jenis Data:</b> ${title}<br>
-        <b>Kawasan:</b> Dukuh Wonosari<br>
-        <b>Sumber:</b> Data spasial Wonosari
+        <b>Kawasan:</b> Wonosari
       </div>
     `;
   }
 
   let orderedKeys = [
-    "id","Nama_Pmlk","KTP_Pmlk","Tglhr_Pmlk","UmrKK_Pmlk",
-    "Luas_Tnh","Bukti_Pmlk","Jns_Pmnf","Ind_Trlntr","Sts_Konfl","Text_Pngg"
+    "id","Nama_Pmlk","KTP_Pmlk","Tglhr_Pmlk",
+    "UmrKK_Pmlk","Luas_Tnh","Bukti_Pmlk",
+    "Jns_Pmnf","Ind_Trlntr","Sts_Konfl","Text_Pngg"
   ];
 
   let labelMap = {
-    id: "ID",
-    Nama_Pmlk: "Nama Pemilik",
-    KTP_Pmlk: "KTP Pemilik",
-    Tglhr_Pmlk: "Tanggal Lahir",
-    UmrKK_Pmlk: "Umur KK",
-    Luas_Tnh: "Luas Tanah",
-    Bukti_Pmlk: "Bukti Kepemilikan",
-    Jns_Pmnf: "Jenis Pemanfaatan",
-    Ind_Trlntr: "Indikasi Terlantar",
-    Sts_Konfl: "Status Konflik",
-    Text_Pngg: "Penggunaan"
+    id:"ID",
+    Nama_Pmlk:"Nama Pemilik",
+    KTP_Pmlk:"KTP",
+    Tglhr_Pmlk:"Tanggal Lahir",
+    UmrKK_Pmlk:"Umur",
+    Luas_Tnh:"Luas Tanah",
+    Bukti_Pmlk:"Bukti",
+    Jns_Pmnf:"Pemanfaatan",
+    Ind_Trlntr:"Terlantar",
+    Sts_Konfl:"Status",
+    Text_Pngg:"Penggunaan"
   };
 
-  let html = `<h3 class="popup-title">${title}</h3><table class="popup-table">`;
+  let html = `
+    <h3 class="popup-title">${title}</h3>
+    <table class="popup-table">
+  `;
 
   orderedKeys.forEach(function(key){
-    if(props[key] !== undefined && props[key] !== null && props[key] !== ""){
-      html += `<tr><td>${labelMap[key]}</td><td>${props[key]}</td></tr>`;
+
+    if(
+      props[key] !== undefined &&
+      props[key] !== null &&
+      props[key] !== ""
+    ){
+
+      html += `
+        <tr>
+          <td>${labelMap[key]}</td>
+          <td>${props[key]}</td>
+        </tr>
+      `;
     }
   });
 
   html += `</table>`;
+
   return html;
 }
 
-function addLayer(fileName, title, style, targetLayer, fit=false){
+function addLayer(fileName, title, style, targetLayer){
+
   fetch("data/" + fileName)
-    .then(res => res.json())
+
+    .then(res => {
+
+      if(!res.ok){
+        throw new Error("File tidak ditemukan: " + fileName);
+      }
+
+      return res.json();
+    })
+
     .then(data => {
+
       var layer = L.geoJSON(data,{
-        style:style,
+
+        style: style,
+
         onEachFeature:function(feature, lyr){
+
           lyr.on("mouseover", function(){
-            lyr.setStyle({ weight:(style.weight || 1) + 0.8 });
+
+            lyr.setStyle({
+              weight:(style.weight || 1) + 0.7
+            });
+
           });
 
           lyr.on("mouseout", function(){
             lyr.setStyle(style);
           });
 
-          lyr.bindPopup(makePopup(title, feature.properties), {
-            maxWidth: 520
-          });
+          lyr.bindPopup(
+            makePopup(title, feature.properties),
+            { maxWidth:520 }
+          );
         }
       });
 
       layer.addTo(targetLayer);
 
-      if(fit && layer.getBounds().isValid()){
-        map.fitBounds(layer.getBounds(),{ padding:[40,40] });
+      if(title === "Area Dukuh Wonosari"){
+
+        setTimeout(() => {
+
+          if(layer.getBounds().isValid()){
+
+            map.fitBounds(
+              layer.getBounds(),
+              { padding:[40,40] }
+            );
+
+          }
+
+        },500);
       }
+
     })
-    .catch(err => console.log("Gagal load:", fileName, err));
+
+    .catch(err => {
+      console.log(err);
+    });
 }
 
-addLayer("geo_dk_wonosari.geojson","Area Dukuh Wonosari",{
-  color:"#3D74B6",
-  weight:1.15,
-  fillColor:"#FBF5DE",
-  fillOpacity:0.26
-},geoLayer,true);
+addLayer(
+  "Geo_DK_Wonosari.geojson",
+  "Area Dukuh Wonosari",
+  {
+    color:"#3D74B6",
+    weight:1.2,
+    fillColor:"#FBF5DE",
+    fillOpacity:0.28
+  },
+  geoLayer
+);
 
-addLayer("jalandukuh.geojson","Jalan Dukuh",{
-  color:"#E89B29",
-  weight:2.4,
-  opacity:0.9
-},jalanLayer);
+addLayer(
+  "Jalandukuh.geojson",
+  "Jalan Dukuh",
+  {
+    color:"#E89B29",
+    weight:2.5,
+    opacity:0.9
+  },
+  jalanLayer
+);
 
-addLayer("sungaidukuh.geojson","Saluran / Irigasi",{
-  color:"#4FA3A5",
-  weight:2.1,
-  opacity:0.75
-},sungaiLayer);
+addLayer(
+  "Sungaidukuh.geojson",
+  "Saluran / Irigasi",
+  {
+    color:"#4FA3A5",
+    weight:2,
+    opacity:0.8
+  },
+  sungaiLayer
+);
 
-addLayer("batasdukuh.geojson","Batas Wilayah",{
-  color:"#7D5BA6",
-  weight:2,
-  dashArray:"7,7",
-  fillOpacity:0
-},batasLayer);
+addLayer(
+  "Batasdukuh.geojson",
+  "Batas Wilayah",
+  {
+    color:"#7D5BA6",
+    weight:2,
+    dashArray:"7,7",
+    fillOpacity:0
+  },
+  batasLayer
+);
 
 function toggleLayer(layer, status){
-  if(status) map.addLayer(layer);
-  else map.removeLayer(layer);
+
+  if(status){
+    map.addLayer(layer);
+  } else {
+    map.removeLayer(layer);
+  }
 }
 
-function updateCheckboxes(statusGeo, statusJalan, statusSungai, statusBatas){
+function updateCheckboxes(
+  statusGeo,
+  statusJalan,
+  statusSungai,
+  statusBatas
+){
+
   document.getElementById("cbGeo").checked = statusGeo;
   document.getElementById("cbJalan").checked = statusJalan;
   document.getElementById("cbSungai").checked = statusSungai;
@@ -519,6 +232,7 @@ function updateCheckboxes(statusGeo, statusJalan, statusSungai, statusBatas){
 }
 
 function setPreset(mode){
+
   if(mode === "administrasi"){
     updateCheckboxes(true,false,false,true);
   }
@@ -532,8 +246,7 @@ function setPreset(mode){
   }
 }
 
-L.control.scale({ metric:true, imperial:false }).addTo(map);
-</script>
-
-</body>
-</html>
+L.control.scale({
+  metric:true,
+  imperial:false
+}).addTo(map);
